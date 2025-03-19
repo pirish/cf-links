@@ -13,7 +13,19 @@ import { DurableObject } from "cloudflare:workers";
  * Learn more at https://developers.cloudflare.com/durable-objects
  */
 
+export interface Env {
+  SHORT_URLS: KVNamespace;
+}
+
+//const shortURLs = {
+//  "/linkedin": "https://www.linkedin.com/in/patrick-irish-4816a551/",
+//  "/twitter": "https://twitter.com/pirish",
+//  "/github": "https://github.com/pirish",
+//} as Record<any, string>;
+
+
 /** A Durable Object's behavior is defined in an exported Javascript class */
+/**
 export class MyDurableObject extends DurableObject<Env> {
 	/**
 	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
@@ -22,10 +34,9 @@ export class MyDurableObject extends DurableObject<Env> {
 	 * @param ctx - The interface for interacting with Durable Object state
 	 * @param env - The interface to reference bindings declared in wrangler.jsonc
 	 */
-	constructor(ctx: DurableObjectState, env: Env) {
-		super(ctx, env);
-	}
-
+//	constructor(ctx: DurableObjectState, env: Env) {
+//		super(ctx, env);
+//	}
 	/**
 	 * The Durable Object exposes an RPC method sayHello which will be invoked when when a Durable
 	 *  Object instance receives a request from a Worker via the same method invocation on the stub
@@ -33,10 +44,10 @@ export class MyDurableObject extends DurableObject<Env> {
 	 * @param name - The name provided to a Durable Object instance from a Worker
 	 * @returns The greeting to be sent back to the Worker
 	 */
-	async sayHello(name: string): Promise<string> {
-		return `Hello, ${name}!`;
-	}
-}
+//	async sayHello(name: string): Promise<string> {
+//		return `Hello, ${name}!`;
+//	}
+//}
 
 export default {
 	/**
@@ -50,16 +61,32 @@ export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		// We will create a `DurableObjectId` using the pathname from the Worker request
 		// This id refers to a unique instance of our 'MyDurableObject' class above
-		let id: DurableObjectId = env.MY_DURABLE_OBJECT.idFromName(new URL(request.url).pathname);
+		//let id: DurableObjectId = env.MY_DURABLE_OBJECT.idFromName(new URL(request.url).pathname);
 
 		// This stub creates a communication channel with the Durable Object instance
 		// The Durable Object constructor will be invoked upon the first call for a given id
-		let stub = env.MY_DURABLE_OBJECT.get(id);
+		//let stub = env.MY_DURABLE_OBJECT.get(id);
 
 		// We call the `sayHello()` RPC method on the stub to invoke the method on the remote
 		// Durable Object instance
-		let greeting = await stub.sayHello("world");
+		//let greeting = await stub.sayHello("world");
 
-		return new Response(greeting);
+		//return new Response(greeting);
+
+    const url = new URL(request.url);
+
+    const { pathname } = url;
+
+    //const redirectURL = shortURLs[pathname];
+    const redirectURL = await env.SHORT_URLS.get(pathname);
+
+    if (!redirectURL) {
+      return new Response(
+        `There is no defined URL for the path: '${pathname}', sorry :(`
+      );
+    }
+
+    return Response.redirect(redirectURL, 301);
+
 	},
 } satisfies ExportedHandler<Env>;
